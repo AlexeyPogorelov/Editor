@@ -1,0 +1,66 @@
+/ $mobile:
+/ $tablet:
+/ $small:
+/ $large:
+/ $extra:
+
+//	X LARGE
+@media screen and (min-width: 1664px)
+	.container
+		width: 1300px
+
+//	LARGE
+@media screen and (min-width: 1420px)
+	.container
+		width: 1300px
+
+//	MEDIUM
+@media screen and (max-width: 1419px)
+	.container
+		width: 1160px
+
+//	1280
+@media screen and (max-width: 1240px)
+	.container
+		width: 880px
+
+@media screen and (max-width: 1024px)
+	.container
+		width: 660px
+
+//	TABLET
+@media screen and (max-width: 900px)
+	.container
+		width: 550px
+
+//	MOBILE
+@media screen and (max-width: 700px)
+	.container
+		width: 100%
+	body::-webkit-scrollbar
+		width: 0
+		height: 0
+		background-color: #fff
+		border: none
+	
+//	SMALL
+@media screen and (max-width: 620px)
+	.mobile-visible
+		display: inherit !important
+	.mobile-hidden
+		display: none !important
+	.mobile-xs-visible
+		display: inherit
+	.mobile-xs-hidden
+		display: none
+
+@media screen and (max-height: 480px)
+	.container
+		width: 100%
+
+//	xSMALL
+@media screen and (max-width: 480px)
+	.container
+		width: 100%
+
+//	FIXES

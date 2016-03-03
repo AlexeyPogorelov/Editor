@@ -1,0 +1,22 @@
+{
+  "name": "planer",
+  "version": "0.0.1",
+  "description": "Jade Sass and browser\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[DS\u001b[D\u001b[DBr\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[D\u001b[D\u001b[D\u001b[D\u001b[CSync",
+  "main": "gulpfile.js",
+  "dependencies": {
+    "browser-sync": "^2.11.1",
+    "gulp": "^3.9.1",
+    "gulp-autoprefixer": "^3.1.0",
+    "gulp-jade": "^1.1.0",
+    "gulp-sass": "^2.2.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "editor"
+  ],
+  "author": "Alexey Pogorelov",
+  "license": "ISC"
+}

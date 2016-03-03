@@ -1,0 +1,2 @@
+# Best editor ever
+# documentation:
