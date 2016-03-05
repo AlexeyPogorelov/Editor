@@ -51,7 +51,7 @@ var animationPrefix = (function () {
 	$('img').each(function () {
 		if (!this.naturalWidth || true) {
 			loading.trg ++;
-			$(this).one('load', loading.loaded)
+			$(this).one('load', loading.loaded);
 		}
 	});
 
@@ -113,7 +113,7 @@ $(document).on('ready', function () {
 					}
 				},
 				$el: $el
-			}
+			};
 			$el.on('click', function () {
 				plg.up();
 			});
@@ -130,11 +130,34 @@ $(document).on('ready', function () {
 				$modal.addClass('opened');
 				// $modal.parent().addClass('opened');
 
+				bodyOverflow.fixBody();
+
 			},
 			closeModal: function ($modal) {
 
-				$modal.removeClass('opened');
-				// $modal.parent().removeClass('opened');
+				if ($modal && $modal instanceof jQuery) {
+
+					$modal.removeClass('opened');
+
+					bodyOverflow.unfixBody();
+
+				} else if ($modal) {
+
+					this.closeModal( $( $modal ) );
+
+					return;
+
+				} else if (this.opened.length > 0) {
+
+					for (var y = 0; y < this.opened.length; y++) {
+
+						this.closeModal( this.opened[y] );
+
+					}
+
+					return;
+
+				}
 				
 				if (this.opened.length > 1) {
 
@@ -149,11 +172,13 @@ $(document).on('ready', function () {
 					}
 
 				} else {
+
 					this.opened = [];
+
 				}
 
 			}
-		}
+		};
 
 		$('[data-modal]').on('click', function (e) {
 
@@ -207,23 +232,44 @@ $(document).on('ready', function () {
 			if (e.target === this) {
 				modals.closeModal( $(this) );
 			}
-		})
+		});
 
 		$(window).on('keyup', function (e) {
 			// esc pressed
 			if (e.keyCode == '27') {
-				bodyOverflow.unfixBody();
+
+				modals.closeModal();
+
 			}
+		});
+
+		// add content button
+		$('[data-add-content]').each(function () {
+
+			var $self = $(this);
+
+			$self.on('click', function (e) {
+
+				// element types
+				alert( e.target.getAttribute('type') );
+				e.target.getAttribute('type');
+
+			});
 		});
 
 		//scroll
 		$(document).on('scroll', function () {
+
 			var top = $(this).scrollTop();
 
 			if (top > winHeight / 2) {
+
 				goUp.show();
+
 			} else {
+
 				goUp.hide();
+
 			}
 
 		});

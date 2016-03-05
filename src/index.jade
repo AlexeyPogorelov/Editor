@@ -33,5 +33,10 @@ html(lang='en')
 		.preloader
 			.after
 
-	script(src='vendor/jquery/dist/jquery.js')
-	script(src='js/main.js')
+		.plus-icon(data-add-content)
+			.table(data-type="table")
+			.image(data-type="image")
+			.text(data-type="text")
+
+		script(src='vendor/jquery/dist/jquery.js')
+		script(src='js/main.js')
