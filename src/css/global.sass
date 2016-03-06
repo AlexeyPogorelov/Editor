@@ -1,3 +1,7 @@
+$font-stack: 14px/1.5em Arial, sans-serif
+$main-color: #eee
+$dark-color: #333
+
 *
 	margin: 0
 	padding: 0
@@ -5,10 +9,8 @@
 
 body
 	color: black
-	font-family: $font-stack
-	font-size: 18px
+	font: $font-stack
 	font-weight: 300
-	line-height: 30px
 	&.fixed
 		overflow: hidden
 		&.client-ios
@@ -17,21 +19,21 @@ body
 			// transition-delay: .3s
 
 // webkit scroll
-.lightbox-cell::-webkit-scrollbar-corner, .dropdown::-webkit-scrollbar-corner, .mobile-menu .container::-webkit-scrollbar-corner
+.lightbox-cell::-webkit-scrollbar-corner, .dropdown::-webkit-scrollbar-corner
 	background-color: #e5e5e5
 
-.lightbox-cell::-webkit-scrollbar, .dropdown::-webkit-scrollbar, .mobile-menu .container::-webkit-scrollbar
+.lightbox-cell::-webkit-scrollbar, .dropdown::-webkit-scrollbar
 	width: 6px
 	height: 0
 	background-color: #fff
 	border: none
 
-.lightbox-cell::-webkit-scrollbar-thumb, .dropdown::-webkit-scrollbar-thumb, .mobile-menu .container::-webkit-scrollbar-thumb
+.lightbox-cell::-webkit-scrollbar-thumb, .dropdown::-webkit-scrollbar-thumb
 	background-color: $main-color
 	border: 1px solid #e5e5e5
 // end webkit scroll
 button, input, optgroup, select, textarea
-	font-family: $font-stack
+	font: $font-stack
 
 section
 	display: block
@@ -41,11 +43,11 @@ a
 	border: none
 	color: #000
 	outline: none
-	font-family: $font-stack
+	font: $font-stack
 	text-decoration: none
 
 p
-	color: $font-color
+	color: $main-color
 	font-size: 20px
 	font-weight: 400
 	line-height: 25px
@@ -59,12 +61,10 @@ li
 	list-style: none
 
 h1
-	color: white
-	font-size: 58px
 	font-weight: 700
 	line-height: 69px
 	&.big
-		font-size: 88px
+		font-size: 2em
 	&.center
 		text-align: center
 		width: 100%
@@ -163,8 +163,6 @@ input
 
 // CHECKBOX
 
-// Base for label styling
-
 .checkbox input[type="checkbox"]
 	&:not(:checked), &:checked
 		left: -9999px
@@ -218,20 +216,9 @@ input
 	&:checked:focus + label:before, &:not(:checked):focus + label:before
 		border: 1px solid #777
 
-// checkbox aspect
-
-// checked mark aspect
-
-// checked mark aspect changes
-
-// disabled checkbox
-
-// accessibility
-
 // END CHECKBOX
 
 // RADIO
-// Base for label styling
 
 .radio input[type="radio"]
 	&:not(:checked), &:checked
@@ -285,16 +272,6 @@ input
 		//border: 2px solid #777
 	&:checked:focus + label:after, &:not(:checked):focus + label:after
 
-// checkbox aspect
-
-// checked mark aspect
-
-// checked mark aspect changes
-
-// disabled checkbox
-
-// accessibility
-
 // END RADIO
 
 //	INPUT FILE
@@ -317,6 +294,7 @@ input
 		&:hover + label, &:focus + label
 
 //	END INPUT FILE
+
 //	INPUT NUMBER
 
 input
@@ -562,90 +540,21 @@ input
 		//transition-delay: 1s
 		z-index: 2
 
-.clearfix
+.clearfix, .row, section, .container, .content-holder, .nav, .navbar, .content-row
 	&:before, &:after
 		content: ""
 		display: table
-		clear: both
-
-.container
-	&:before, &:after
-		content: ""
-		display: table
-		clear: both
-
-.content-holder
-	&:before, &:after
-		content: ""
-		display: table
-		clear: both
-
-section
-	&:before, &:after
-		display: table
-		content: " "
-		clear: both
-
-.row
-	&:before, &:after
-		display: table
-		content: " "
-		clear: both
-
-.nav
-	&:before, &:after
-		display: table
-		content: " "
-		clear: both
-
-.navbar
-	&:before, &:after
-		display: table
-		content: " "
-		clear: both
-
-.left-col
-	&:before, &:after
-		display: table
-		content: " "
-		clear: both
-
-.right-col
-	&:before, &:after
-		display: table
-		content: " "
-		clear: both
-
-.header-row
-	&:before, &:after
-		display: table
-		content: " "
-		clear: both
-
-.content-row
-	&:before, &:after
-		display: table
-		content: " "
 		clear: both
 
 button, .btn
 	border: none
 	cursor: pointer
 	//transition: all .3s ease
-
-button
-	&.focus, &.active, &:focus, &:hover
-		text-decoration: none
-		//transition: all .1s ease
-
-.btn
 	&.focus, &.active, &:focus, &:hover
 		text-decoration: none
 		//transition: all .1s ease
 
 button.invert, .btn.invert
-
-button.invert
 	&.focus, &:focus, &:hover
 		text-decoration: none
 		//transition: all .5s ease

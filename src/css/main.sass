@@ -1,12 +1,19 @@
-/ $font-stack:
-/ $main-color:
-/ $dark-color:
+// $font-stack:
+// $main-color:
+// $dark-color:
 
 .plus-icon
 	& > *
+		cursor: pointer
 		display: inline-block
-		height: 10px
-		width: 10px
+		font-size: 0
+		margin: 10px 4px
+		height: 20px
+		width: 20px
+		&:first-child
+			margin-left: 12px
+		&:last-child
+			margin-right: 12px
 	.table
 		background: #aaa
 	.image
