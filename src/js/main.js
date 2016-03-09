@@ -89,6 +89,66 @@ $(window).on('load', function () {
 
 });
 
+var editorControls = {
+	'log': function ($field) {
+		console.log( $field.get(0) );
+	},
+	'bold': function () {
+		alert('bold');
+	},
+	'italic': function () {
+		alert('italic');
+	},
+	'align-left': function () {
+		//
+	},
+	'align-right': function () {
+		//
+	},
+	'align-center': function () {
+		//
+	},
+	'line-through': function () {
+		//
+	},
+	'color': function () {
+		//
+	},
+	'mark': function () {
+		//
+	},
+	'list': function () {
+		//
+	},
+	'table': function () {
+		//
+	},
+	'image': function () {
+		//
+	},
+	'link': function () {
+		//
+	}
+};
+
+var controlsGroups = {
+	'basic': function ($controls, $field) {
+
+			var $log = $('<div>', {
+					'class': 'log'
+				}).on( 'click', editorControls.log.bind(this, $field) ).appendTo($controls);
+
+			var $bold = $('<div>', {
+					'class': 'bold'
+				}).on( 'click', editorControls.bold.bind(this, $field) ).appendTo($controls);
+
+			var $italic = $('<div>', {
+					'class': 'italic'
+				}).on( 'click', editorControls.italic.bind(this, $field) ).appendTo($controls);
+
+	}
+};
+
 $(document).on('ready', function () {
 	var winWidth = $(window).width(),
 		winHeight = $(window).height(),
@@ -326,9 +386,20 @@ $(document).on('ready', function () {
 
 		createContent.text = function () {
 
-			var $content = $('<div>')
-				.addClass('editor')
-				.attr('contenteditable', true);
+			var $content = $('<div>', {
+					'class': 'editor'
+				}),
+				$field = $('<div>', {
+					'class': 'field',
+					'contenteditable': true
+				}).appendTo($content),
+				$controls = $('<div>', {
+					'class': 'controls'
+				}).appendTo($content);
+
+			// controls
+			controlsGroups.basic($controls, $field);
+
 			// console.log('text');
 
 			return $content;
