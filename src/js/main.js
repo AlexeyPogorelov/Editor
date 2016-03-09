@@ -93,40 +93,249 @@ var editorControls = {
 	'log': function ($field) {
 		console.log( $field.get(0) );
 	},
-	'bold': function () {
-		alert('bold');
+	'bold': function ($field) {
+		console.log('bold');
+
+		$field.off('keypress').on('keypress', function (e) {
+			// console.log(e.keyCode);
+			if (e.keyCode === 13) {
+				onReturn(e);
+			}
+		});
+
+		var onReturn = function (e) {
+			// console.log('return');
+			var doxExec = false;
+
+			try {
+				doxExec = document.execCommand('bold', false, true);
+			}
+			catch (error) {
+				// IE throws an error if it does not recognize the command...
+			}
+
+			if (doxExec) {
+				// Hurray, no dirty hacks needed !
+				return true;
+			}
+			// Standard
+			else if (window.getSelection) {
+				e.stopPropagation();
+
+				var selection = window.getSelection(),
+						range = selection.getRangeAt(0),
+						br = document.createElement('br');
+
+				range.deleteContents();
+
+				range.insertNode(br);
+
+				range.setStartAfter(br);
+
+				range.setEndAfter(br);
+
+				range.collapse(false);
+
+				selection.removeAllRanges();
+
+				selection.addRange(range);
+
+				return false;
+			}
+			// IE
+			else if ($.browser.msie) {
+				e.preventDefault();
+
+				var range = document.selection.createRange();
+
+				range.pasteHTML('<BR><SPAN class="--IE-BR-HACK"></SPAN>');
+
+				// Move the caret after the BR
+				range.moveStart('character', 1);
+
+				return false;
+			}
+
+			// Last resort, just use the default browser behavior and pray...
+			return true;
+		};
 	},
-	'italic': function () {
-		alert('italic');
+	'italic': function ($field) {
+		function getNextNode(node) {
+			var next = node.firstChild;
+			if (next) {
+				return next;
+			}
+			while (node) {
+				if ( (next = node.nextSibling) ) {
+					return next;
+				}
+				node = node.parentNode;
+			}
+		}
+
+		function getNodesInRange(range) {
+			var start = range.startContainer;
+			var end = range.endContainer;
+			var commonAncestor = range.commonAncestorContainer;
+			var nodes = [];
+			var node;
+
+			// Walk parent nodes from start to common ancestor
+			for (node = start.parentNode; node; node = node.parentNode) {
+				nodes.push(node);
+				if (node == commonAncestor) {
+					break;
+				}
+			}
+			nodes.reverse();
+
+			// Walk children and siblings from start until end is found
+			for (node = start; node; node = getNextNode(node)) {
+				nodes.push(node);
+				if (node == end) {
+					break;
+				}
+			}
+
+			return nodes;
+		}
+
+		function getNodeIndex(node) {
+			var i = 0;
+			while ( (node = node.previousSibling) ) {
+				++i;
+			}
+			return i;
+		}
+
+		function insertAfter(node, precedingNode) {
+			var nextNode = precedingNode.nextSibling, parent = precedingNode.parentNode;
+			if (nextNode) {
+				parent.insertBefore(node, nextNode);
+			} else {
+				parent.appendChild(node);
+			}
+			return node;
+		}
+
+		// Note that we cannot use splitText() because it is bugridden in IE 9.
+		function splitDataNode(node, index) {
+			var newNode = node.cloneNode(false);
+			newNode.deleteData(0, index);
+			node.deleteData(index, node.length - index);
+			insertAfter(newNode, node);
+			return newNode;
+		}
+
+		function isCharacterDataNode(node) {
+			var t = node.nodeType;
+			return t == 3 || t == 4 || t == 8 ; // Text, CDataSection or Comment
+		}
+
+		function splitRangeBoundaries(range) {
+			var sc = range.startContainer, so = range.startOffset, ec = range.endContainer, eo = range.endOffset;
+			var startEndSame = (sc === ec);
+
+			// Split the end boundary if necessary
+			if (isCharacterDataNode(ec) && eo > 0 && eo < ec.length) {
+				splitDataNode(ec, eo);
+			}
+
+			// Split the start boundary if necessary
+			if (isCharacterDataNode(sc) && so > 0 && so < sc.length) {
+				sc = splitDataNode(sc, so);
+				if (startEndSame) {
+					eo -= so;
+					ec = sc;
+				} else if (ec == sc.parentNode && eo >= getNodeIndex(sc)) {
+					++eo;
+				}
+				so = 0;
+			}
+			range.setStart(sc, so);
+			range.setEnd(ec, eo);
+		}
+
+		function getTextNodesInRange(range) {
+			var textNodes = [];
+			var nodes = getNodesInRange(range);
+			for (var i = 0, node, el; node = nodes[i++]; ) {
+				if (node.nodeType == 3) {
+					textNodes.push(node);
+				}
+			}
+			return textNodes;
+		}
+
+		function surroundRangeContents(range, templateElement) {
+			splitRangeBoundaries(range);
+			var textNodes = getTextNodesInRange(range);
+			if (textNodes.length == 0) {
+				return;
+			}
+			for (var i = 0, node, el; node = textNodes[i++]; ) {
+				if (node.nodeType == 3) {
+					el = templateElement.cloneNode(false);
+					node.parentNode.insertBefore(el, node);
+					el.appendChild(node);
+				}
+			}
+			range.setStart(textNodes[0], 0);
+			var lastTextNode = textNodes[textNodes.length - 1];
+			range.setEnd(lastTextNode, lastTextNode.length);
+		}
+
+		document.onmouseup = function() {
+			if (window.getSelection) {
+				var templateElement = document.createElement("span");
+				templateElement.className = "highlight";
+				var sel = window.getSelection();
+				var ranges = [];
+				var range;
+				for (var i = 0, len = sel.rangeCount; i < len; ++i) {
+					ranges.push( sel.getRangeAt(i) );
+				}
+				sel.removeAllRanges();
+
+				// Surround ranges in reverse document order to prevent surrounding subsequent ranges messing with already-surrounded ones
+				i = ranges.length;
+				while (i--) {
+					range = ranges[i];
+					surroundRangeContents(range, templateElement);
+					sel.addRange(range);
+				}
+			}
+		};
 	},
-	'align-left': function () {
+	'align-left': function ($field) {
 		//
 	},
-	'align-right': function () {
+	'align-right': function ($field) {
 		//
 	},
-	'align-center': function () {
+	'align-center': function ($field) {
 		//
 	},
-	'line-through': function () {
+	'line-through': function ($field) {
 		//
 	},
-	'color': function () {
+	'color': function ($field) {
 		//
 	},
-	'mark': function () {
+	'mark': function ($field) {
 		//
 	},
-	'list': function () {
+	'list': function ($field) {
 		//
 	},
-	'table': function () {
+	'table': function ($field) {
 		//
 	},
-	'image': function () {
+	'image': function ($field) {
 		//
 	},
-	'link': function () {
+	'link': function ($field) {
 		//
 	}
 };
@@ -395,7 +604,7 @@ $(document).on('ready', function () {
 				}).appendTo($content),
 				$controls = $('<div>', {
 					'class': 'controls'
-				}).appendTo($content);
+				}).insertBefore($field);
 
 			// controls
 			controlsGroups.basic($controls, $field);
