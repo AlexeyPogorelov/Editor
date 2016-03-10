@@ -89,78 +89,143 @@ $(window).on('load', function () {
 
 });
 
+var editorMethods = {
+	'replace': function(element, text, caret) {
+		var tmp = _getCaretInfo(element),
+			orig = element.value,
+			pos = $(element).scrollTop(),
+			range = {start: tmp.start, end: tmp.start + text.length};
+
+		element.value = orig.substr(0, tmp.start) + text + orig.substr(tmp.end);
+
+		$(element).scrollTop(pos);
+		this.setPos(element, range, caret);
+	},
+	'getCaretInfo': function(element){
+		var res = {
+			text: '',
+			start: 0,
+			end: 0
+		};
+
+		if (!element.value) {
+			/* no value or empty string */
+			return res;
+		}
+
+		try {
+			if (win.getSelection) {
+				/* except IE */
+				res.start = element.selectionStart;
+				res.end = element.selectionEnd;
+				res.text = element.value.slice(res.start, res.end);
+			} else if (doc.selection) {
+				/* for IE */
+				element.focus();
+
+				var range = doc.selection.createRange(),
+					range2 = doc.body.createTextRange();
+
+				res.text = range.text;
+
+				try {
+					range2.moveToElementText(element);
+					range2.setEndPoint('StartToStart', range);
+				} catch (e) {
+					range2 = element.createTextRange();
+					range2.setEndPoint('StartToStart', range);
+				}
+
+				res.start = element.value.length - range2.text.length;
+				res.end = res.start + range.text.length;
+			}
+		} catch (e) {
+			/* give up */
+		}
+
+		return res;
+	},
+	setPos: function(element, toRange, caret) {
+		caret = this._caretMode(caret);
+
+		if (caret === 'start') {
+			toRange.end = toRange.start;
+		} else if (caret === 'end') {
+			toRange.start = toRange.end;
+		}
+
+		element.focus();
+		try {
+			if (element.createTextRange) {
+				var range = element.createTextRange();
+
+				if (win.navigator.userAgent.toLowerCase().indexOf("msie") >= 0) {
+					toRange.start = element.value.substr(0, toRange.start).replace(/\r/g, '').length;
+					toRange.end = element.value.substr(0, toRange.end).replace(/\r/g, '').length;
+				}
+
+				range.collapse(true);
+				range.moveStart('character', toRange.start);
+				range.moveEnd('character', toRange.end - toRange.start);
+
+				range.select();
+			} else if (element.setSelectionRange) {
+				element.setSelectionRange(toRange.start, toRange.end);
+			}
+		} catch (e) {
+			/* give up */
+		}
+	},
+	_caretMode: function(caret) {
+			caret = caret || "keep";
+			if (caret === false) {
+				caret = 'end';
+			}
+
+			switch (caret) {
+				case 'keep':
+				case 'start':
+				case 'end':
+					break;
+
+				default:
+					caret = 'keep';
+			}
+
+			return caret;
+		}
+};
+
 var editorControls = {
-	'log': function ($field) {
+	'log': function (e) {
+
+		e.preventDefault();
+		var $field = e.data.$field;
+
 		console.log( $field.get(0) );
 	},
-	'bold': function ($field) {
-		console.log('bold');
+	'test': function (e) {
 
-		$field.off('keypress').on('keypress', function (e) {
-			// console.log(e.keyCode);
-			if (e.keyCode === 13) {
-				onReturn(e);
-			}
-		});
+		e.preventDefault();
+		var $field = e.data.$field;
 
-		var onReturn = function (e) {
-			// console.log('return');
-			var doxExec = false;
+		console.log( editorControls.selected );
 
-			try {
-				doxExec = document.execCommand('bold', false, true);
-			}
-			catch (error) {
-				// IE throws an error if it does not recognize the command...
-			}
+		// console.log( window.getSelection() );
 
-			if (doxExec) {
-				// Hurray, no dirty hacks needed !
-				return true;
-			}
-			// Standard
-			else if (window.getSelection) {
-				e.stopPropagation();
-
-				var selection = window.getSelection(),
-						range = selection.getRangeAt(0),
-						br = document.createElement('br');
-
-				range.deleteContents();
-
-				range.insertNode(br);
-
-				range.setStartAfter(br);
-
-				range.setEndAfter(br);
-
-				range.collapse(false);
-
-				selection.removeAllRanges();
-
-				selection.addRange(range);
-
-				return false;
-			}
-			// IE
-			else if ($.browser.msie) {
-				e.preventDefault();
-
-				var range = document.selection.createRange();
-
-				range.pasteHTML('<BR><SPAN class="--IE-BR-HACK"></SPAN>');
-
-				// Move the caret after the BR
-				range.moveStart('character', 1);
-
-				return false;
-			}
-
-			// Last resort, just use the default browser behavior and pray...
-			return true;
-		};
+		// console.log( (document.all) ? document.selection.createRange().text : document.getSelection() );
 	},
-	'italic': function ($field) {
+	'bold': function (e) {
+
+		var so;
+
+	},
+	'italic': function (e) {
+
+		e.preventDefault();
+
+		var $field = e.data.$field;
+
 		function getNextNode(node) {
 			var next = node.firstChild;
 			if (next) {
@@ -308,52 +373,103 @@ var editorControls = {
 			}
 		};
 	},
-	'align-left': function ($field) {
-		//
+	'alignLeft': function (e) {
+
+		e.preventDefault();
+
+		var sel, range, $field = e.data.$field;
+
+		console.log($field);
+		
+		if (window.getSelection) {
+			sel = window.getSelection();
+			
+			if (sel.rangeCount) {
+				range = sel.getRangeAt(0);
+				selectedText = range.toString();
+				range.deleteContents();
+				range.insertNode(document.createTextNode('[l]' + selectedText + '[/l]'));
+			}
+		}
+		else if (document.selection && document.selection.createRange) {
+			range = document.selection.createRange();
+			selectedText = document.selection.createRange().text + "";
+			range.text = '[l]' + selectedText + '[/l]';
+		}
+
+		return false;
+
 	},
-	'align-right': function ($field) {
-		//
+	'alignRight': function (e) {
+		e.preventDefault();
+		var $field = e.data.$field;
 	},
-	'align-center': function ($field) {
-		//
+	'alignCenter': function (e) {
+		e.preventDefault();
+		var $field = e.data.$field;
 	},
-	'line-through': function ($field) {
-		//
+	'lineThrough': function (e) {
+		e.preventDefault();
+		var $field = e.data.$field;
 	},
-	'color': function ($field) {
-		//
+	'color': function (e) {
+		e.preventDefault();
+		var $field = e.data.$field;
 	},
-	'mark': function ($field) {
-		//
+	'mark': function (e) {
+		e.preventDefault();
+		var $field = e.data.$field;
 	},
-	'list': function ($field) {
-		//
+	'list': function (e) {
+		e.preventDefault();
+		var $field = e.data.$field;
 	},
-	'table': function ($field) {
-		//
+	'table': function (e) {
+		e.preventDefault();
+		var $field = e.data.$field;
 	},
-	'image': function ($field) {
-		//
+	'image': function (e) {
+		e.preventDefault();
+		var $field = e.data.$field;
 	},
-	'link': function ($field) {
-		//
+	'link': function (e) {
+		e.preventDefault();
+		var $field = e.data.$field;
 	}
 };
 
 var controlsGroups = {
 	'basic': function ($controls, $field) {
 
-			var $log = $('<div>', {
+			var $log = $('<input>', {
+					'type': 'button',
+					'value': 'log',
 					'class': 'log'
-				}).on( 'click', editorControls.log.bind(this, $field) ).appendTo($controls);
+				}).on( 'click', {'$field': $field}, editorControls.log ).appendTo($controls);
 
-			var $bold = $('<div>', {
+			var $test = $('<input>', {
+					'type': 'button',
+					'value': 'test',
+					'class': 'test'
+				}).on( 'click', {'$field': $field}, editorControls.test ).appendTo($controls);
+
+			var $bold = $('<input>', {
+					'type': 'button',
+					'value': 'bold',
 					'class': 'bold'
-				}).on( 'click', editorControls.bold.bind(this, $field) ).appendTo($controls);
+				}).on( 'click', {'$field': $field}, editorControls.bold ).appendTo($controls);
 
-			var $italic = $('<div>', {
+			var $italic = $('<input>', {
+					'type': 'button',
+					'value': 'italic',
 					'class': 'italic'
-				}).on( 'click', editorControls.italic.bind(this, $field) ).appendTo($controls);
+				}).on( 'click', {'$field': $field}, editorControls.italic ).appendTo($controls);
+
+			var $alignLeft = $('<input>', {
+					'type': 'button',
+					'value': 'align-left',
+					'class': 'align-left'
+				}).on( 'click', {'$field': $field}, editorControls.alignLeft ).appendTo($controls);
 
 	}
 };
@@ -599,8 +715,60 @@ $(document).on('ready', function () {
 					'class': 'editor'
 				}),
 				$field = $('<div>', {
-					'class': 'field',
-					'contenteditable': true
+					'contenteditable': true,
+					'class': 'field'
+				}).on('mouseup', function (e) {
+					// TODO save selected area
+					// alert();
+					// console.log( (document.all) ? document.selection.createRange().text : document.getSelection() );
+					// console.log ( document.getSelection() === editorControls.selected );
+					// editorControls.selected = (document.all) ? document.selection.createRange().text : document.getSelection();
+					var element = this,
+						res = {
+							text: '',
+							start: 0,
+							end: 0
+						};
+
+					if (!element.value) {
+						/* no value or empty string */
+						editorControls.selected = res;
+						return res;
+					}
+
+					try {
+						if (win.getSelection) {
+							/* except IE */
+							res.start = element.selectionStart;
+							res.end = element.selectionEnd;
+							res.text = element.value.slice(res.start, res.end);
+						} else if (doc.selection) {
+							/* for IE */
+							element.focus();
+
+							var range = doc.selection.createRange(),
+								range2 = doc.body.createTextRange();
+
+							res.text = range.text;
+
+							try {
+								range2.moveToElementText(element);
+								range2.setEndPoint('StartToStart', range);
+							} catch (e) {
+								range2 = element.createTextRange();
+								range2.setEndPoint('StartToStart', range);
+							}
+
+							res.start = element.value.length - range2.text.length;
+							res.end = res.start + range.text.length;
+						}
+					} catch (e) {
+						/* give up */
+					}
+
+					editorControls.selected = res;
+
+
 				}).appendTo($content),
 				$controls = $('<div>', {
 					'class': 'controls'
