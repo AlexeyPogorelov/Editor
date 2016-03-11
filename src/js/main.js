@@ -1,3 +1,18 @@
+document.onclick = function (e) {
+	var editor = document.getElementsByClassName('container');
+	editor.contenteditable = true;
+
+	// console.log(editor)
+
+	// Создаем Range
+	var rng = editor.createRange();
+	// Задаем верхнюю граничную точку, передав контейнер и смещение
+	rng.setStart( root.getElementsByClassName('table')[0], 1 );
+	// Аналогично для нижней границы
+	rng.setEnd( root.getElementsByClassName('text')[0], 2 );
+	// Теперь мы можем вернуть текст, который содержится в полученной области
+	console.log( rng.toString() );
+};
 var animationPrefix = (function () {
 			var t,
 			el = document.createElement("fakeelement");
@@ -181,44 +196,87 @@ var editorMethods = {
 		}
 	},
 	_caretMode: function(caret) {
-			caret = caret || "keep";
-			if (caret === false) {
-				caret = 'end';
-			}
+		caret = caret || "keep";
+		if (caret === false) {
+			caret = 'end';
+		}
 
-			switch (caret) {
-				case 'keep':
-				case 'start':
-				case 'end':
-					break;
+		switch (caret) {
+			case 'keep':
+			case 'start':
+			case 'end':
+				break;
 
-				default:
-					caret = 'keep';
-			}
+			default:
+				caret = 'keep';
+		}
 
-			return caret;
-		},
-		wrap: function (tag) {
+		return caret;
+	},
+	createField: function () {
 
-			var sel, range;
+		return $('<div>', {
+				'contenteditable': true,
+				'class': 'field'
+			});
 
-			if (window.getSelection) {
-				sel = window.getSelection();
-				
-				if (sel.rangeCount) {
-					range = sel.getRangeAt(0);
-					selectedText = range.toString();
-					range.deleteContents();
-					range.insertNode(document.createTextNode('<' + tag + '>' + selectedText + '</' + tag + '>'));
-				}
-			}
-			else if (document.selection && document.selection.createRange) {
-				range = document.selection.createRange();
-				selectedText = document.selection.createRange().text + "";
-				range.text = '<' + tag + '>' + selectedText + '</' + tag + '>';
-			}
+	},
+	unwrap: function (tag) {
+		// TODO
+	},
+	wrap: function (tag) {
+
+		var sel, range;
+
+		if (tag) {
+
+			tag = tag.toLowerCase();
+
+		} else {
+
+			return false;
 
 		}
+
+		function modernBrowsers () {
+
+			range = sel.getRangeAt(0);
+			selectedText = range.toString();
+			// console.log( selectedText );
+			range.deleteContents();
+			var createdElement = document.createElement(tag);
+			createdElement.innerHTML = selectedText;
+			// createdElement.appendChild( range );
+			range.insertNode( createdElement );
+
+		}
+
+		function ieBrowser () {
+
+			// TODO test it in ie 10+
+			range = document.selection.createRange();
+			selectedText = document.selection.createRange().text + "";
+			range.text = '<' + tag + '>' + selectedText + '</' + tag + '>';
+
+		}
+
+		if (window.getSelection) {
+
+			sel = window.getSelection();
+
+			if (sel.rangeCount) {
+				modernBrowsers();
+			} else {
+				console.warn('Судя по всему ничего не выбрано');
+				editorMethods.unwrap();
+			}
+
+		} else if (document.selection && document.selection.createRange) {
+			ieBrowser();
+		}
+
+	}
+
 };
 
 var editorControls = {
@@ -236,7 +294,8 @@ var editorControls = {
 
 		console.log( document.createRange() );
 
-		console.log( editorControls.selected );
+		// console.log( editorControls.selected );
+		editorMethods.wrap('p', 'red');
 
 		// console.log( window.getSelection() );
 
@@ -244,27 +303,8 @@ var editorControls = {
 	},
 	'bold': function (e) {
 
-		var sel, range, tag = 'b';
-		
-		if (window.getSelection) {
-			// alert();
-			sel = window.getSelection();
-			
-			if (sel.rangeCount) {
-				range = sel.getRangeAt(0);
-				selectedText = range.toString();
-				// console.log( selectedText );
-				range.deleteContents();
-				var createdElement = document.createElement('B');
-				createdElement.innerHTML = selectedText;
-				// createdElement.appendChild( range );
-				range.insertNode( createdElement );
-			}
-		} else if (document.selection && document.selection.createRange) {
-			range = document.selection.createRange();
-			selectedText = document.selection.createRange().text + "";
-			range.text = '<' + tag + '>' + selectedText + '</' + tag + '>';
-		}
+		e.preventDefault();
+		editorMethods.wrap('B');
 
 	},
 	'italic': function (e) {
@@ -423,28 +463,7 @@ var editorControls = {
 	'alignLeft': function (e) {
 
 		e.preventDefault();
-
-		var sel, range, $field = e.data.$field;
-
-		console.log($field);
-		
-		if (window.getSelection) {
-			sel = window.getSelection();
-			
-			if (sel.rangeCount) {
-				range = sel.getRangeAt(0);
-				selectedText = range.toString();
-				range.deleteContents();
-				range.insertNode(document.createTextNode('[l]' + selectedText + '[/l]'));
-			}
-		}
-		else if (document.selection && document.selection.createRange) {
-			range = document.selection.createRange();
-			selectedText = document.selection.createRange().text + "";
-			range.text = '[l]' + selectedText + '[/l]';
-		}
-
-		return false;
+		var $field = e.data.$field;
 
 	},
 	'alignRight': function (e) {
@@ -488,35 +507,35 @@ var editorControls = {
 var controlsGroups = {
 	'basic': function ($controls, $field) {
 
-			var $log = $('<input>', {
-					'type': 'button',
-					'value': 'log',
-					'class': 'log'
-				}).on( 'click', {'$field': $field}, editorControls.log ).appendTo($controls);
+		$('<input>', {
+			'type': 'button',
+			'value': 'log',
+			'class': 'log'
+		}).on( 'click', {'$field': $field}, editorControls.log ).appendTo($controls);
 
-			var $test = $('<input>', {
-					'type': 'button',
-					'value': 'test',
-					'class': 'test'
-				}).on( 'click', {'$field': $field}, editorControls.test ).appendTo($controls);
+		$('<input>', {
+			'type': 'button',
+			'value': 'test',
+			'class': 'test'
+		}).on( 'click', {'$field': $field}, editorControls.test ).appendTo($controls);
 
-			var $bold = $('<input>', {
-					'type': 'button',
-					'value': 'bold',
-					'class': 'bold'
-				}).on( 'click', {'$field': $field}, editorControls.bold ).appendTo($controls);
+		$('<input>', {
+			'type': 'button',
+			'value': 'bold',
+			'class': 'bold'
+		}).on( 'click', {'$field': $field}, editorControls.bold ).appendTo($controls);
 
-			var $italic = $('<input>', {
-					'type': 'button',
-					'value': 'italic',
-					'class': 'italic'
-				}).on( 'click', {'$field': $field}, editorControls.italic ).appendTo($controls);
+		$('<input>', {
+			'type': 'button',
+			'value': 'italic',
+			'class': 'italic'
+		}).on( 'click', {'$field': $field}, editorControls.italic ).appendTo($controls);
 
-			var $alignLeft = $('<input>', {
-					'type': 'button',
-					'value': 'align-left',
-					'class': 'align-left'
-				}).on( 'click', {'$field': $field}, editorControls.alignLeft ).appendTo($controls);
+		$('<input>', {
+			'type': 'button',
+			'value': 'align-left',
+			'class': 'align-left'
+		}).on( 'click', {'$field': $field}, editorControls.alignLeft ).appendTo($controls);
 
 	}
 };
@@ -761,74 +780,7 @@ $(document).on('ready', function () {
 			var $content = $('<div>', {
 					'class': 'editor'
 				}),
-				$field = $('<div>', {
-					'contenteditable': true,
-					'class': 'field'
-				}).on('mouseup', function (e) {
-					// TODO save selected area
-					// alert();
-					// console.log( (document.all) ? document.selection.createRange().text : document.getSelection() );
-					// console.log ( document.getSelection() === editorControls.selected );
-					// editorControls.selected = (document.all) ? document.selection.createRange().text : document.getSelection();
-					var element = this,
-						res = {
-							text: '',
-							start: 0,
-							end: 0
-						};
-
-					// console.dir(element);
-
-					if (!element.value) {
-
-						/* no value or empty string */
-						editorControls.selected = res;
-						// console.log('nothing selected');
-						// return res;
-
-					}
-
-					// console.log(res);
-
-					try {
-						var win = window;
-						if (win.getSelection) {
-							/* except IE */
-							res.start = element.selectionStart;
-							res.end = element.selectionEnd;
-							res.text = element.innerHTML.slice(res.start, res.end);
-						} else if (doc.selection) {
-							/* for IE */
-							element.focus();
-
-							var range = doc.selection.createRange(),
-								range2 = doc.body.createTextRange();
-
-							res.text = range.text;
-
-							try {
-								range2.moveToElementText(element);
-								range2.setEndPoint('StartToStart', range);
-							} catch (e) {
-								range2 = element.createTextRange();
-								range2.setEndPoint('StartToStart', range);
-							}
-
-							res.start = element.value.length - range2.text.length;
-							res.end = res.start + range.text.length;
-
-						}
-					} catch (e) {
-						/* give up */
-						console.error('Ошибка контейнера');
-						console.log(e);
-					}
-
-					editorControls.selected = res;
-					// console.log(res);
-
-
-				}).appendTo($content),
+				$field = editorMethods.createField().appendTo($content),
 				$controls = $('<div>', {
 					'class': 'controls'
 				}).insertBefore($field);
