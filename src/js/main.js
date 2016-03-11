@@ -103,10 +103,11 @@ var editorMethods = {
 	},
 	'getCaretInfo': function(element){
 		var res = {
-			text: '',
-			start: 0,
-			end: 0
-		};
+				text: '',
+				start: 0,
+				end: 0
+			},
+			win = window;
 
 		if (!element.value) {
 			/* no value or empty string */
@@ -141,6 +142,8 @@ var editorMethods = {
 			}
 		} catch (e) {
 			/* give up */
+			console.log(e);
+			// console.error(e);
 		}
 
 		return res;
@@ -174,6 +177,7 @@ var editorMethods = {
 			}
 		} catch (e) {
 			/* give up */
+			console.error(e);
 		}
 	},
 	_caretMode: function(caret) {
@@ -193,6 +197,27 @@ var editorMethods = {
 			}
 
 			return caret;
+		},
+		wrap: function (tag) {
+
+			var sel, range;
+
+			if (window.getSelection) {
+				sel = window.getSelection();
+				
+				if (sel.rangeCount) {
+					range = sel.getRangeAt(0);
+					selectedText = range.toString();
+					range.deleteContents();
+					range.insertNode(document.createTextNode('<' + tag + '>' + selectedText + '</' + tag + '>'));
+				}
+			}
+			else if (document.selection && document.selection.createRange) {
+				range = document.selection.createRange();
+				selectedText = document.selection.createRange().text + "";
+				range.text = '<' + tag + '>' + selectedText + '</' + tag + '>';
+			}
+
 		}
 };
 
@@ -209,6 +234,8 @@ var editorControls = {
 		e.preventDefault();
 		var $field = e.data.$field;
 
+		console.log( document.createRange() );
+
 		console.log( editorControls.selected );
 
 		// console.log( window.getSelection() );
@@ -217,7 +244,27 @@ var editorControls = {
 	},
 	'bold': function (e) {
 
-		var so;
+		var sel, range, tag = 'b';
+		
+		if (window.getSelection) {
+			// alert();
+			sel = window.getSelection();
+			
+			if (sel.rangeCount) {
+				range = sel.getRangeAt(0);
+				selectedText = range.toString();
+				// console.log( selectedText );
+				range.deleteContents();
+				var createdElement = document.createElement('B');
+				createdElement.innerHTML = selectedText;
+				// createdElement.appendChild( range );
+				range.insertNode( createdElement );
+			}
+		} else if (document.selection && document.selection.createRange) {
+			range = document.selection.createRange();
+			selectedText = document.selection.createRange().text + "";
+			range.text = '<' + tag + '>' + selectedText + '</' + tag + '>';
+		}
 
 	},
 	'italic': function (e) {
@@ -730,18 +777,26 @@ $(document).on('ready', function () {
 							end: 0
 						};
 
+					// console.dir(element);
+
 					if (!element.value) {
+
 						/* no value or empty string */
 						editorControls.selected = res;
-						return res;
+						// console.log('nothing selected');
+						// return res;
+
 					}
 
+					// console.log(res);
+
 					try {
+						var win = window;
 						if (win.getSelection) {
 							/* except IE */
 							res.start = element.selectionStart;
 							res.end = element.selectionEnd;
-							res.text = element.value.slice(res.start, res.end);
+							res.text = element.innerHTML.slice(res.start, res.end);
 						} else if (doc.selection) {
 							/* for IE */
 							element.focus();
@@ -761,12 +816,16 @@ $(document).on('ready', function () {
 
 							res.start = element.value.length - range2.text.length;
 							res.end = res.start + range.text.length;
+
 						}
 					} catch (e) {
 						/* give up */
+						console.error('Ошибка контейнера');
+						console.log(e);
 					}
 
 					editorControls.selected = res;
+					// console.log(res);
 
 
 				}).appendTo($content),
