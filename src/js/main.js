@@ -1,18 +1,3 @@
-document.onclick = function (e) {
-	var editor = document.getElementsByClassName('container');
-	editor.contenteditable = true;
-
-	// console.log(editor)
-
-	// Создаем Range
-	var rng = editor.createRange();
-	// Задаем верхнюю граничную точку, передав контейнер и смещение
-	rng.setStart( root.getElementsByClassName('table')[0], 1 );
-	// Аналогично для нижней границы
-	rng.setEnd( root.getElementsByClassName('text')[0], 2 );
-	// Теперь мы можем вернуть текст, который содержится в полученной области
-	console.log( rng.toString() );
-};
 var animationPrefix = (function () {
 			var t,
 			el = document.createElement("fakeelement");
@@ -22,9 +7,9 @@ var animationPrefix = (function () {
 				"MozTransition": "animationend",
 				"WebkitTransition": "webkitAnimationEnd"
 			};
-			for (t in transitions){
+			for (t in transitions) {
 
-				if (el.style[t] !== undefined){
+				if (el.style[t] !== undefined) {
 
 					return transitions[t];
 
@@ -75,10 +60,14 @@ var animationPrefix = (function () {
 
 				});
 
+				// TODO rangy init
+				rangy.init();
+				console.log(rangy.createClassApplier());
+
 			}
 	};
 
-	// TODO
+	// TODO test it
 	$('img').each(function () {
 
 		if (!this.naturalWidth || true) {
@@ -116,7 +105,7 @@ var editorMethods = {
 		$(element).scrollTop(pos);
 		this.setPos(element, range, caret);
 	},
-	'getCaretInfo': function(element){
+	'getCaretInfo': function(element) {
 		var res = {
 				text: '',
 				start: 0,
@@ -218,11 +207,62 @@ var editorMethods = {
 		return $('<div>', {
 				'contenteditable': true,
 				'class': 'field'
+			}).html('<p>&nbsp;</p>').on('click', function (e) {
+				e.preventDefault();
+			}).on('keypress', function (e) {
+				console.log(e.keyCode);
+				switch (e.keyCode) {
+					case 13:
+						// enter
+						// e.preventDefault();
+						break;
+					}
 			});
 
 	},
 	unwrap: function (tag) {
-		// TODO
+
+		var getComputedDisplay = (typeof window.getComputedStyle != "undefined") ?
+			function(el) {
+				return window.getComputedStyle(el, null).display;
+			} :
+			function(el) {
+				return el.currentStyle.display;
+			};
+
+		function replaceWithOwnChildren(el) {
+			var parent = el.parentNode;
+			while (el.hasChildNodes()) {
+				parent.insertBefore(el.firstChild, el);
+			}
+			parent.removeChild(el);
+		}
+
+		function removeSelectionFormatting() {
+
+			var sel = rangy.getSelection();
+
+			if (!sel.isCollapsed) {
+				for (var i = 0, range; i < sel.rangeCount; ++i) {
+					range = sel.getRangeAt(i);
+					
+					// Split partially selected nodes 
+					range.splitBoundaries();
+					
+					// Get formatting elements. For this example, we'll count any
+					// element with display: inline, except <br>s.
+					var formattingEls = range.getNodes([1], function(el) {
+						return el.tagName != "BR" && getComputedDisplay(el) == "inline";
+					});
+					
+					// Remove the formatting elements
+					for (var i = 0, el; el = formattingEls[i++]; ) {
+						replaceWithOwnChildren(el);
+					}
+				}
+			}
+		}
+
 	},
 	wrap: function (tag) {
 
@@ -292,14 +332,8 @@ var editorControls = {
 		e.preventDefault();
 		var $field = e.data.$field;
 
-		console.log( document.createRange() );
+		console.log ( rangy.createClassApplier() );
 
-		// console.log( editorControls.selected );
-		editorMethods.wrap('p', 'red');
-
-		// console.log( window.getSelection() );
-
-		// console.log( (document.all) ? document.selection.createRange().text : document.getSelection() );
 	},
 	'bold': function (e) {
 
